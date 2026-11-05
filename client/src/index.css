@@ -32,11 +32,74 @@ body {
   border-radius: 6px;
 }
 
+/* ---------------- حركات الصفحة الرئيسية ---------------- */
+
+/* كلمات العنوان بتطلع من تحت وحدة ورا الثانية */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(0.6em); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.animate-rise {
+  opacity: 0;
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* لمعة بتمشي على كلمة angel */
+@keyframes shimmer {
+  to { background-position: -200% center; }
+}
+.text-shimmer {
+  background: linear-gradient(110deg, var(--color-rose) 35%, #ffc1d6 50%, var(--color-rose) 65%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* المنتجات بتطفو */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-14px) rotate(calc(var(--r, 0deg) + 3deg)); }
+}
+.animate-float { animation: float var(--d, 6s) ease-in-out infinite; }
+
+/* الدوائر الملونة بالخلفية بتغيّر شكلها */
+@keyframes blob {
+  0%, 100% { border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; transform: translate(0, 0) scale(1); }
+  33% { border-radius: 70% 30% 46% 54% / 30% 39% 61% 70%; transform: translate(4%, -6%) scale(1.06); }
+  66% { border-radius: 30% 70% 70% 30% / 53% 30% 70% 47%; transform: translate(-5%, 4%) scale(0.96); }
+}
+.animate-blob { animation: blob 14s ease-in-out infinite; }
+
+/* نجوم بتلمع */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+.animate-twinkle { animation: twinkle var(--d, 3s) ease-in-out infinite; }
+
+/* شريط الكلام اللي بيمشي */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 28s linear infinite; }
+
+/* العناصر بتظهر لما توصلها بالسكرول */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--delay, 0ms);
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
 /* بيحترم إعداد "تقليل الحركة" بالجهاز */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation: none !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  .animate-rise, .reveal { opacity: 1; transform: none; filter: none; }
 }
