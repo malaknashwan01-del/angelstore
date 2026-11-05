@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildRoutine, type Answers } from "./quiz";
+import { getProductById } from "../test/fixtures";
 
-const ids = (a: Answers) => buildRoutine(a).map((s) => s.product.id);
-const steps = (a: Answers) => buildRoutine(a).map((s) => s.key);
+const ids = (a: Answers) => buildRoutine(a, getProductById).map((s) => s.product.id);
+const steps = (a: Answers) => buildRoutine(a, getProductById).map((s) => s.key);
 
 describe("skin quiz routine", () => {
   it("builds a 3-step routine for minimal", () => {
@@ -29,5 +30,14 @@ describe("skin quiz routine", () => {
       const routine = ids({ skinType: "normal", concern, routine: "complete" });
       expect(new Set(routine).size).toBe(routine.length);
     }
+  });
+});
+
+describe("missing products", () => {
+  it("skips a step when its product was removed from the store", () => {
+    const routine = buildRoutine({ skinType: "oily", concern: "acne", routine: "complete" }, (id) =>
+      id === 17 ? undefined : getProductById(id)
+    );
+    expect(routine.map((s) => s.key)).not.toContain("treat");
   });
 });

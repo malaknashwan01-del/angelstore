@@ -12,7 +12,7 @@ describe("Skin quiz", () => {
     await userEvent.click(screen.getByRole("button", { name: /dryness/i }));
     await userEvent.click(screen.getByRole("button", { name: /keep it quick/i }));
 
-    expect(screen.getByRole("heading", { name: "Your dry skin routine" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Your dry skin routine" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
 
     await userEvent.click(screen.getByRole("button", { name: "Add routine to bag" }));

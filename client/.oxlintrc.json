@@ -1,0 +1,8 @@
+{
+  "overrides": [
+    {
+      "files": ["src/test/**", "**/*.test.tsx"],
+      "rules": { "react/only-export-components": "off" }
+    }
+  ]
+}

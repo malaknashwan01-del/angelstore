@@ -3,6 +3,8 @@
 
 import type { Category, Product } from "../types";
 
+// بيانات وهمية للاختبارات — نفس كتالوج السيرفر
+
 export const CATEGORIES: { slug: Category; label: string }[] = [
   { slug: "makeup", label: "Makeup" },
   { slug: "skincare", label: "Skin Care" },

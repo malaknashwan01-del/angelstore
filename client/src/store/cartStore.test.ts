@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { useCartStore, selectCount, selectSubtotal } from "./cartStore";
-import { requireProduct } from "../data/products";
+import { requireProduct } from "../test/fixtures";
 
 const lipstick = requireProduct(1); // $18
 const cream = requireProduct(11); // $28

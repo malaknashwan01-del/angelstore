@@ -1,14 +1,20 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
-import { afterEach, beforeEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import { useCartStore } from "../store/cartStore";
-import { useWishlistStore } from "../store/wishlistStore";
+import { resetDb, server } from "./mockApi";
 
-// كل اختبار بيبدأ بسلة ومفضلة فاضيين
+beforeAll(() => server.listen());
+afterAll(() => server.close());
+
+// كل اختبار بيبدأ بسلة فاضية وبيانات API نظيفة
 beforeEach(() => {
   localStorage.clear();
   useCartStore.setState({ items: [] });
-  useWishlistStore.setState({ ids: [] });
+  resetDb();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  server.resetHandlers();
+});
