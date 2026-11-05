@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
-import { getProductById } from "../data/products";
+import { useProductMap } from "../hooks/useProducts";
+import { Spinner } from "../components/States";
 import ProductImage from "../components/ProductImage";
 import QuantityPicker from "../components/QuantityPicker";
 import OrderSummary from "../components/OrderSummary";
@@ -12,6 +13,7 @@ export default function Cart() {
   const items = useCartStore((s) => s.items);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
   const removeItem = useCartStore((s) => s.removeItem);
+  const { map, isPending } = useProductMap();
 
   if (items.length === 0) {
     return (
@@ -28,6 +30,8 @@ export default function Cart() {
     );
   }
 
+  if (isPending) return <Spinner label="Loading your bag…" />;
+
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">
       <h1 className="font-display text-4xl sm:text-5xl">Your bag</h1>
@@ -35,8 +39,19 @@ export default function Cart() {
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
         <ul className="divide-y divide-blush-200 rounded-card border border-blush-200 bg-white">
           {items.map((item) => {
-            const product = getProductById(item.id);
-            if (!product) return null;
+            const product = map.get(item.id);
+            if (!product) {
+              return (
+                <li key={item.key} className="flex items-center justify-between gap-4 p-4 text-sm">
+                  <span>
+                    <b>{item.name}</b> is no longer available.
+                  </span>
+                  <button onClick={() => removeItem(item.key)} className="text-rose-dark hover:underline">
+                    Remove
+                  </button>
+                </li>
+              );
+            }
             return (
               <li key={item.key} className="flex gap-4 p-4">
                 <Link to={`/product/${item.id}`} className="shrink-0 rounded-xl bg-blush-50">

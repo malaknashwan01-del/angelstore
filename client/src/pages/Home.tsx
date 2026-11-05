@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { products, CATEGORIES, requireProduct } from "../data/products";
+import { CATEGORIES } from "../data/categories";
+import { useProductMap } from "../hooks/useProducts";
+import { ProductGridSkeleton, ErrorState } from "../components/States";
 import ProductCard from "../components/ProductCard";
 import ProductImage from "../components/ProductImage";
-import type { Category, Product } from "../types";
+import type { Category } from "../types";
 import { usePageTitle } from "../lib/usePageTitle";
 
-const bestsellers = products.filter((p) => p.bestseller).slice(0, 4);
-const [heroMain, heroLeft, heroRight] = [11, 1, 10].map(requireProduct) as [Product, Product, Product];
 const categoryCovers: Record<Category, number> = { makeup: 4, skincare: 9 };
 
 const perks = [
@@ -17,6 +17,9 @@ const perks = [
 
 export default function Home() {
   usePageTitle();
+  const { data: products = [], map, isPending, error, refetch } = useProductMap();
+  const bestsellers = products.filter((p) => p.bestseller).slice(0, 4);
+  const [heroMain, heroLeft, heroRight] = [11, 1, 10].map((id) => map.get(id));
   return (
     <>
       {/* Hero */}
@@ -50,9 +53,9 @@ export default function Home() {
 
           <div className="relative mx-auto aspect-square w-full max-w-xs md:max-w-md">
             <div className="absolute inset-6 rounded-full bg-blush-200" />
-            <ProductImage product={heroMain} className="absolute left-[18%] top-[20%] w-[64%]" />
-            <ProductImage product={heroLeft} className="absolute left-[-2%] top-[34%] w-[42%] -rotate-12" />
-            <ProductImage product={heroRight} className="absolute right-[-2%] top-[30%] w-[42%] rotate-6" />
+            {heroMain && <ProductImage product={heroMain} className="absolute left-[18%] top-[20%] w-[64%]" />}
+            {heroLeft && <ProductImage product={heroLeft} className="absolute left-[-2%] top-[34%] w-[42%] -rotate-12" />}
+            {heroRight && <ProductImage product={heroRight} className="absolute right-[-2%] top-[30%] w-[42%] rotate-6" />}
           </div>
         </div>
       </section>
@@ -61,7 +64,8 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-4 pt-14">
         <div className="grid gap-4 sm:grid-cols-2">
           {CATEGORIES.map((cat) => {
-            const cover = requireProduct(categoryCovers[cat.slug]);
+            const cover = map.get(categoryCovers[cat.slug]);
+            const count = products.filter((p) => p.category === cat.slug).length;
             return (
               <Link
                 key={cat.slug}
@@ -71,13 +75,15 @@ export default function Home() {
                 <div>
                   <h2 className="font-display text-3xl">{cat.label}</h2>
                   <p className="mt-1 text-sm text-rose">
-                    {products.filter((p) => p.category === cat.slug).length} products →
+                    {isPending ? "Explore" : `${count} products`} →
                   </p>
                 </div>
-                <ProductImage
-                  product={cover}
-                  className="h-28 w-28 transition-transform duration-300 group-hover:scale-110"
-                />
+                {cover && (
+                  <ProductImage
+                    product={cover}
+                    className="h-28 w-28 transition-transform duration-300 group-hover:scale-110"
+                  />
+                )}
               </Link>
             );
           })}
@@ -92,11 +98,17 @@ export default function Home() {
             View all →
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {bestsellers.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        {isPending ? (
+          <ProductGridSkeleton count={4} className="grid-cols-2 md:grid-cols-4" />
+        ) : error ? (
+          <ErrorState error={error} onRetry={refetch} />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {bestsellers.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Perks */}

@@ -30,9 +30,11 @@ export default function ProductCard({ product }: { product: Product }) {
         <h3 className="font-display text-lg leading-snug">{name}</h3>
         <div className="mt-auto flex items-center justify-between pt-2">
           <span className="font-bold">{formatPrice(price)}</span>
-          <span className="text-sm text-rose-ink/60">
-            ★ {rating} <span className="text-rose-ink/40">({reviews})</span>
-          </span>
+          {reviews > 0 && (
+            <span className="text-sm text-rose-ink/60">
+              ★ {rating} <span className="text-rose-ink/40">({reviews})</span>
+            </span>
+          )}
         </div>
       </div>
     </Link>

@@ -5,6 +5,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // بالتطوير، طلبات /api بتروح للسيرفر — نفس الدومين، فالـ cookies بتشتغل بدون CORS
+    proxy: { "/api": "http://localhost:3001" },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

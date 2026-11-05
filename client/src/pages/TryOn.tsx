@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Product } from "../types";
 import { Link, useSearchParams } from "react-router-dom";
-import { products, getProductById, requireProduct } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
+import { ErrorState, Spinner } from "../components/States";
 import { AREA_BY_TYPE, SKIN_TONES, isTryOnType, type Area } from "../data/tryOn";
 import { useCartStore } from "../store/cartStore";
 import FaceModel from "../components/FaceModel";
@@ -9,16 +10,14 @@ import ProductImage from "../components/ProductImage";
 import { formatPrice } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
 
-const tryOnProducts = products.filter((p) => isTryOnType(p.type));
-
 type Applied = Partial<Record<Area, { productId: number; shade: string }>>;
 
 const areaOf = (p: Product): Area => (isTryOnType(p.type) ? AREA_BY_TYPE[p.type] : "lips");
 
 // الحالة المبدئية من الرابط، مثلاً جاي من صفحة المنتج: ?product=1&shade=#c2185b
-function initialLook(params: URLSearchParams): { selectedId: number; applied: Applied } {
-  const product = getProductById(params.get("product"));
-  if (!product || !isTryOnType(product.type) || !product.shades?.length) {
+function initialLook(params: URLSearchParams, tryOnProducts: Product[]): { selectedId: number; applied: Applied } {
+  const product = tryOnProducts.find((p) => p.id === Number(params.get("product")));
+  if (!product?.shades?.length) {
     return { selectedId: tryOnProducts[0]!.id, applied: {} };
   }
   const wanted = params.get("shade") ?? "";
@@ -31,15 +30,29 @@ function initialLook(params: URLSearchParams): { selectedId: number; applied: Ap
 
 export default function TryOn() {
   usePageTitle("Virtual try-on");
+  const { data: products = [], isPending, error, refetch } = useProducts();
+  const tryOnProducts = products.filter((p) => isTryOnType(p.type) && p.shades?.length);
+
+  if (isPending) return <Spinner label="Getting the model ready…" />;
+  if (error) return <div className="mx-auto max-w-xl px-4 py-16"><ErrorState error={error} onRetry={refetch} /></div>;
+  if (tryOnProducts.length === 0) {
+    return <p className="mx-auto max-w-xl px-4 py-24 text-center text-rose-ink/70">No products to try on right now.</p>;
+  }
+  return <TryOnStudio tryOnProducts={tryOnProducts} />;
+}
+
+function TryOnStudio({ tryOnProducts }: { tryOnProducts: Product[] }) {
   const [params] = useSearchParams();
-  const [initial] = useState(() => initialLook(params));
+  const [initial] = useState(() => initialLook(params, tryOnProducts));
+  const byId = new Map(tryOnProducts.map((p) => [p.id, p]));
+  const find = (id: number) => byId.get(id);
   const [toneIndex, setToneIndex] = useState(1);
   const [selectedId, setSelectedId] = useState(initial.selectedId);
   const [applied, setApplied] = useState<Applied>(initial.applied);
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
 
-  const selected = requireProduct(selectedId);
+  const selected = find(selectedId) ?? tryOnProducts[0]!;
   const area = areaOf(selected);
   const current = applied[area];
   const activeShade = current?.productId === selected.id ? current.shade : null;
@@ -58,18 +71,17 @@ export default function TryOn() {
     setAdded(false);
   };
 
-  const lookItems = (Object.keys(applied) as Area[]).map((key) => ({
-    area: key,
-    shade: applied[key]!.shade,
-    product: requireProduct(applied[key]!.productId),
-  }));
+  const lookItems = (Object.keys(applied) as Area[]).flatMap((key) => {
+    const product = find(applied[key]!.productId);
+    return product ? [{ area: key, shade: applied[key]!.shade, product }] : [];
+  });
 
   const addLook = () => {
     lookItems.forEach((item) => addItem(item.product, item.shade));
     setAdded(true);
   };
 
-  const lipsProduct = applied.lips && getProductById(applied.lips.productId);
+  const lipsProduct = applied.lips && find(applied.lips.productId);
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-12">

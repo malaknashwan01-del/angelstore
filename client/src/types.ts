@@ -29,3 +29,45 @@ export interface CartItem {
   shade: string | null;
   quantity: number;
 }
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: "customer" | "admin";
+}
+
+export interface Review {
+  id: number;
+  rating: number;
+  body: string;
+  createdAt: string;
+  userId: number;
+  author: string;
+}
+
+export type OrderStatus = "placed" | "shipped" | "delivered" | "cancelled";
+
+export interface ShippingDetails {
+  fullName: string;
+  email: string;
+  phone: string;
+  city: string;
+  address: string;
+}
+
+export interface Order {
+  id: number;
+  status: OrderStatus;
+  createdAt: string;
+  shipping: ShippingDetails;
+  subtotal: number;
+  shippingCost: number;
+  total: number;
+  items: { productId: number | null; name: string; unitPrice: number; quantity: number; shade: string | null }[];
+  customer?: { name: string; email: string };
+}
+
+export type ProductInput = Omit<Product, "id" | "rating" | "reviews">;
+
+export type ShopSort = "featured" | "price-asc" | "price-desc" | "rating";

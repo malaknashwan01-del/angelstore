@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useCartStore, selectCount } from "../store/cartStore";
-import { useWishlistStore } from "../store/wishlistStore";
+import { useMe } from "../hooks/useAuth";
+import { useWishlist } from "../hooks/useWishlist";
 import Logo from "./Logo";
 
 const links = [
@@ -25,7 +26,12 @@ function Badge({ count }: { count: number }) {
 
 export default function Navbar() {
   const count = useCartStore(selectCount);
-  const saved = useWishlistStore((s) => s.ids.length);
+  const { data: user } = useMe();
+  const { data: wishlistIds } = useWishlist();
+  const saved = wishlistIds?.length ?? 0;
+  const accountLink = user
+    ? { to: user.role === "admin" ? "/admin" : "/account", label: user.role === "admin" ? "Admin" : "Account" }
+    : { to: "/login", label: "Sign in" };
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname, search } = useLocation();
 
@@ -60,6 +66,9 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          <NavLink to={accountLink.to} className={(a) => `hidden text-sm font-medium md:block ${linkClass(a)}`}>
+            {accountLink.label}
+          </NavLink>
           <Link
             to="/wishlist"
             aria-label="Wishlist"
@@ -112,7 +121,7 @@ export default function Navbar() {
         className="border-t border-blush-200 bg-cream md:hidden"
       >
         <ul className="mx-auto max-w-6xl px-4 py-3">
-          {[...links, { to: "/wishlist", label: "Wishlist" }, { to: "/help", label: "Help" }].map((link) => (
+          {[...links, { to: "/wishlist", label: "Wishlist" }, accountLink, { to: "/help", label: "Help" }].map((link) => (
             <li key={link.to}>
               <NavLink
                 to={link.to}

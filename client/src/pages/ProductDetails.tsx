@@ -1,22 +1,35 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getProductById, products } from "../data/products";
+import { useProduct, useProducts } from "../hooks/useProducts";
 import { useCartStore } from "../store/cartStore";
 import ProductImage from "../components/ProductImage";
 import ProductCard from "../components/ProductCard";
 import QuantityPicker from "../components/QuantityPicker";
 import HeartButton from "../components/HeartButton";
-import { TRY_ON_TYPES } from "../data/tryOn";
+import Reviews from "../components/Reviews";
+import Stars from "../components/Stars";
+import { ErrorState, Spinner } from "../components/States";
+import { isTryOnType } from "../data/tryOn";
 import { formatPrice } from "../lib/format";
+import { ApiError } from "../lib/api";
+import { usePageTitle } from "../lib/usePageTitle";
 import NotFound from "./NotFound";
 import type { Product } from "../types";
-import { usePageTitle } from "../lib/usePageTitle";
 
 export default function ProductDetails() {
-  const { id } = useParams();
-  const product = getProductById(id);
+  const id = Number(useParams().id);
+  const { data: product, isPending, error, refetch } = useProduct(id);
+
+  if (!Number.isInteger(id) || (error instanceof ApiError && error.status === 404)) return <NotFound />;
+  if (isPending) return <Spinner label="Loading product…" />;
+  if (error || !product) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <ErrorState error={error} onRetry={refetch} />
+      </div>
+    );
+  }
   // key={id} بيرجّع الحالة من الأول لما تنتقل لمنتج ثاني
-  if (!product) return <NotFound />;
   return <ProductView key={id} product={product} />;
 }
 
@@ -26,10 +39,8 @@ function ProductView({ product }: { product: Product }) {
   const [shade, setShade] = useState<string | null>(product.shades?.[0] ?? null);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
-
-  const related = products
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4);
+  const { data: sameCategory = [] } = useProducts({ category: product.category });
+  const related = sameCategory.filter((p) => p.id !== product.id).slice(0, 4);
 
   const handleAdd = () => {
     addItem(product, shade, quantity);
@@ -39,10 +50,10 @@ function ProductView({ product }: { product: Product }) {
 
   return (
     <section className="mx-auto max-w-6xl px-4 py-10">
-      <nav className="mb-6 text-sm text-rose-ink/60">
+      <nav className="mb-6 text-sm text-rose-ink/60" aria-label="Breadcrumb">
         <Link to="/shop" className="hover:text-rose">Shop</Link>
         <span className="mx-2">/</span>
-        <Link to={`/shop?category=${product.category}`} className="capitalize hover:text-rose">
+        <Link to={`/shop?category=${product.category}`} className="hover:text-rose">
           {product.category === "skincare" ? "Skin care" : "Makeup"}
         </Link>
       </nav>
@@ -59,16 +70,17 @@ function ProductView({ product }: { product: Product }) {
         <div>
           <p className="text-sm uppercase tracking-widest text-rose">{product.brand}</p>
           <h1 className="mt-2 font-display text-4xl leading-tight">{product.name}</h1>
-          <p className="mt-2 text-sm text-rose-ink/60">
-            ★ {product.rating} · {product.reviews} reviews
-          </p>
+          <a href="#reviews" className="mt-2 inline-flex items-center gap-2 text-sm text-rose-ink/60 hover:text-rose">
+            <Stars value={product.rating} />
+            {product.reviews > 0 ? `${product.rating} · ${product.reviews} reviews` : "No reviews yet"}
+          </a>
           <p className="mt-6 text-3xl font-bold">{formatPrice(product.price)}</p>
           <p className="mt-6 leading-relaxed text-rose-ink/80">{product.description}</p>
 
           {product.shades && product.type !== "palette" && (
             <div className="mt-8">
               <p className="mb-3 text-sm font-medium">Shade</p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 {product.shades.map((s) => (
                   <button
                     key={s}
@@ -98,7 +110,7 @@ function ProductView({ product }: { product: Product }) {
             <HeartButton productId={product.id} className="h-12 w-12 border border-blush-200" />
           </div>
 
-          {TRY_ON_TYPES.includes(product.type) && (
+          {isTryOnType(product.type) && (
             <Link
               to={`/try-on?product=${product.id}&shade=${encodeURIComponent(shade ?? "")}`}
               className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-rose hover:underline"
@@ -114,6 +126,8 @@ function ProductView({ product }: { product: Product }) {
           </ul>
         </div>
       </div>
+
+      <Reviews product={product} />
 
       {related.length > 0 && (
         <div className="mt-20">

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QUESTIONS, buildRoutine, type Answers } from "../data/quiz";
 import { useCartStore } from "../store/cartStore";
+import { useProductMap } from "../hooks/useProducts";
+import { ErrorState, Spinner } from "../components/States";
 import ProductImage from "../components/ProductImage";
 import { formatPrice } from "../lib/format";
 import { usePageTitle } from "../lib/usePageTitle";
@@ -12,6 +14,7 @@ export default function Quiz() {
   const [answers, setAnswers] = useState<Partial<Answers>>({});
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
+  const { map, isPending, error, refetch } = useProductMap();
 
   const done = step === QUESTIONS.length;
 
@@ -27,8 +30,10 @@ export default function Quiz() {
   };
 
   if (done) {
+    if (isPending) return <Spinner label="Building your routine…" />;
+    if (error) return <div className="mx-auto max-w-xl px-4 py-16"><ErrorState error={error} onRetry={refetch} /></div>;
     const complete = answers as Answers; // كل الأسئلة انجاوبت هون
-    const routine = buildRoutine(complete);
+    const routine = buildRoutine(complete, (id) => map.get(id));
     const total = routine.reduce((sum, r) => sum + r.product.price, 0);
     const skinLabel = QUESTIONS[0]!.options.find((o) => o.value === complete.skinType)?.hint ?? "";
 

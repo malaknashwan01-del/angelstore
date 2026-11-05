@@ -1,4 +1,3 @@
-import { getProductById } from "./products";
 import type { Product } from "../types";
 
 export type SkinType = "oily" | "dry" | "combination" | "sensitive" | "normal";
@@ -96,7 +95,11 @@ const STEPS: Record<StepKey, Step> = {
   mask: { label: "Weekly mask", when: "1–2× a week", pick: () => 14 },
 };
 
-export function buildRoutine(answers: Answers): RoutineStep[] {
+/**
+ * بيبني الروتين من الإجابات.
+ * getProduct بيجيب المنتج برقمه (من الـ API) — إذا منتج انحذف بنتخطى الخطوة
+ */
+export function buildRoutine(answers: Answers, getProduct: (id: number) => Product | undefined): RoutineStep[] {
   const order: StepKey[] =
     answers.routine === "minimal"
       ? ["cleanse", "moisturize", "protect"]
@@ -107,10 +110,9 @@ export function buildRoutine(answers: Answers): RoutineStep[] {
     order.push("mask");
   }
 
-  return order.map((key) => {
+  return order.flatMap((key) => {
     const { label, when, pick } = STEPS[key];
-    const product = getProductById(pick(answers));
-    if (!product) throw new Error(`Routine product missing for step "${key}"`);
-    return { key, label, when, product };
+    const product = getProduct(pick(answers));
+    return product ? [{ key, label, when, product }] : [];
   });
 }

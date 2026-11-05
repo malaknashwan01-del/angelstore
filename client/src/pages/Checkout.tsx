@@ -1,6 +1,10 @@
 import { useState, type ChangeEvent, type FocusEvent, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useCartStore } from "../store/cartStore";
+import { useCreateOrder } from "../hooks/useOrders";
+import { useMe } from "../hooks/useAuth";
+import { ApiError } from "../lib/api";
+import type { User } from "../types";
 import { validate, type FieldName, type Values } from "../lib/checkoutValidation";
 import OrderSummary from "../components/OrderSummary";
 import { usePageTitle } from "../lib/usePageTitle";
@@ -13,20 +17,33 @@ const FIELDS: { name: FieldName; label: string; type?: string; autoComplete: str
   { name: "address", label: "Street address", autoComplete: "street-address", wide: true },
 ];
 
-const empty = Object.fromEntries(FIELDS.map((f) => [f.name, ""])) as Values;
+const emptyFor = (user?: User | null): Values => ({
+  fullName: user?.name ?? "",
+  email: user?.email ?? "",
+  phone: "",
+  city: "",
+  address: "",
+});
 
 export default function Checkout() {
   usePageTitle("Checkout");
+  const { data: user } = useMe();
   const items = useCartStore((s) => s.items);
   const clearCart = useCartStore((s) => s.clearCart);
   const navigate = useNavigate();
-  const [values, setValues] = useState(empty);
+  // الاسم والإيميل بيتعبوا من الحساب
+  const [values, setValues] = useState(() => emptyFor(user));
   const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
-  const [submitting, setSubmitting] = useState(false);
+  const createOrder = useCreateOrder();
 
-  const errors = validate(values);
+  // أخطاء التحقق المحلي + أخطاء السيرفر (shipping.email → email)
+  const serverFields = createOrder.error instanceof ApiError ? createOrder.error.fields : {};
+  const serverErrors = Object.fromEntries(
+    Object.entries(serverFields).map(([k, v]) => [k.replace("shipping.", ""), v])
+  ) as Partial<Record<FieldName, string>>;
+  const errors = { ...serverErrors, ...validate(values) };
 
-  if (items.length === 0 && !submitting) return <Navigate to="/cart" replace />;
+  if (items.length === 0 && !createOrder.isSuccess) return <Navigate to="/cart" replace />;
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setValues((v) => ({ ...v, [e.target.name]: e.target.value }));
@@ -39,13 +56,18 @@ export default function Checkout() {
     setTouched(Object.fromEntries(FIELDS.map((f) => [f.name, true])));
     if (Object.keys(errors).length > 0) return;
 
-    // طلب وهمي — بمشروع حقيقي هون بنبعت الطلب للسيرفر
-    setSubmitting(true);
-    setTimeout(() => {
-      const orderId = `AS-${Date.now().toString().slice(-6)}`;
-      clearCart();
-      navigate("/order-success", { state: { orderId, name: values.fullName } });
-    }, 900);
+    createOrder.mutate(
+      {
+        items: items.map((i) => ({ productId: i.id, quantity: i.quantity, shade: i.shade })),
+        shipping: values,
+      },
+      {
+        onSuccess: (order) => {
+          clearCart();
+          navigate(`/order-success?id=${order.id}`, { replace: true });
+        },
+      }
+    );
   };
 
   return (
@@ -82,15 +104,21 @@ export default function Checkout() {
           })}
 
           <p className="rounded-xl bg-blush-50 p-4 text-sm text-rose-ink/70 sm:col-span-2">
-            💳 Payment: cash on delivery. This is a demo store, so no real order is placed.
+            💳 Payment: cash on delivery. Prices and shipping are confirmed by our server when you place the order.
           </p>
+
+          {createOrder.error && Object.keys(serverFields).length === 0 && (
+            <p role="alert" className="rounded-xl border border-rose-dark/30 bg-blush-50 p-4 text-sm text-rose-dark sm:col-span-2">
+              {createOrder.error.message}
+            </p>
+          )}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={createOrder.isPending}
             className="rounded-full bg-rose py-3 font-medium text-white transition-colors hover:bg-rose-dark disabled:opacity-60 sm:col-span-2"
           >
-            {submitting ? "Placing order…" : "Place order"}
+            {createOrder.isPending ? "Placing order…" : "Place order"}
           </button>
         </form>
 
