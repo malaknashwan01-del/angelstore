@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+/* ألوان AngelStore — درجات الزهري.
+   استخدمها بالكلاسات زي: bg-blush-50  text-rose-ink  border-petal */
+@theme {
+  --color-blush-50: #fff5f8;
+  --color-blush-100: #ffe8ef;
+  --color-blush-200: #ffd0df;
+  --color-petal: #f7b6cb;
+  --color-rose: #e75a8a;
+  --color-rose-dark: #c93b6d;
+  --color-rose-ink: #5a1f36;
+  --color-cream: #fffaf7;
+
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  --radius-card: 1.25rem;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-rose-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* إطار واضح لما المستخدم يتنقل بالكيبورد */
+:focus-visible {
+  outline: 2px solid var(--color-rose);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* بيحترم إعداد "تقليل الحركة" بالجهاز */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
