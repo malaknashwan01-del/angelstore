@@ -37,7 +37,7 @@ describe("Checkout page", () => {
     useCartStore.getState().addItem(requireProduct(11));
     renderAt(<Checkout />, { route: "/checkout", path: "/checkout" });
     await userEvent.click(screen.getByRole("button", { name: "Place order" }));
-    expect(screen.getAllByText(/please enter|is required/i)).toHaveLength(5);
+    expect(screen.getAllByText(/please enter|is required|at least 3/i)).toHaveLength(5);
   });
 
   it("places the order on the server and clears the bag", async () => {

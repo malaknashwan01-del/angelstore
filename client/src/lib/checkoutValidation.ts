@@ -9,7 +9,7 @@ export function validate(values: Values): Errors {
   if (!/^\S+@\S+\.\S+$/.test(values.email)) errors.email = "Please enter a valid email";
   if (!/^\+?[\d\s-]{8,15}$/.test(values.phone)) errors.phone = "Please enter a valid phone number";
   if (!values.city.trim()) errors.city = "City is required";
-  if (values.address.trim().length < 5) errors.address = "Please enter your address";
+  if (values.address.trim().length < 3) errors.address = "Address must be at least 3 characters";
   return errors;
 }
 

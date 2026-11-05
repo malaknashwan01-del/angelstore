@@ -13,7 +13,7 @@ export const shippingSchema = z.object({
   email: z.string().trim().email("Please enter a valid email"),
   phone: z.string().trim().regex(/^\+?[\d\s-]{8,15}$/, "Please enter a valid phone number"),
   city: z.string().trim().min(1, "City is required").max(60),
-  address: z.string().trim().min(5, "Please enter your address").max(200),
+  address: z.string().trim().min(3, "Address must be at least 3 characters").max(200),
 });
 
 const createOrderSchema = z.object({
