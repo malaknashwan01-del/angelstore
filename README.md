@@ -104,6 +104,6 @@ Errors always look like `{ "error": "message", "fields": { "email": "Please ente
 
 1. **Database — Neon:** create a project at neon.tech and copy the connection string.
 2. **API — Render:** New → Blueprint → pick this repo. Fill in `DATABASE_URL` (from Neon), `ADMIN_EMAIL` and a strong `ADMIN_PASSWORD`. `JWT_SECRET` is generated for you. Tables are created on the first start.
-3. **Website — Vercel:** import the repo, set **Root Directory** to `client`. Before deploying, put your Render URL in `client/vercel.json` in place of `YOUR-API.onrender.com`.
+3. **Website — Netlify:** put your Render URL in `netlify.toml` in place of `YOUR-API.onrender.com`, then import the repo on Netlify (settings are read from `netlify.toml`). Vercel also works with `client/vercel.json`.
 
 Brands and products are fictional; this is a portfolio project.
